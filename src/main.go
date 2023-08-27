@@ -15,10 +15,20 @@ func getInput(inputName string, required bool) string {
 	return input
 }
 
+// Returns the commit hash of the latest successful workflow run.
+func getLastSuccessfulWorkflowRun(ghToken string) string {
+
+}
+
 func main() {
 	input := getInput("paths", true)
+	ghToken := getInput("github_token", true)
+
 	// TODOs
-	// get latest successful commit
+	// TODO @khongchai continue from here & use this https://github.com/google/go-github
+	// get latest successful workflow runs
+	latestSuccessfulWorkflowRunCommit := getLastSuccessfulWorkflowRun(ghToken)
+
 	// grab its hash
 	// get the current commit hash
 	// git diff to see the name of the files
