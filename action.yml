@@ -1,0 +1,18 @@
+name: Pathogenic Action Initiator
+description: Compare the current commit with the previous successful commit and return a single boolean value. Does nothing else.
+author: khongchai
+
+inputs:
+  # INPUT_PATHS
+  paths:
+    description: "The paths to check for changes. Supports glob patterns."
+    required: true
+outputs:
+  changed:
+    description: "A boolean value indicating whether any of the paths have changed."
+
+runs:
+  using: docker
+  image: Dockerfile
+  args:
+    - ${{ inputs.paths }}
