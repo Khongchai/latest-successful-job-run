@@ -8,7 +8,7 @@ import (
 
 // https://github.com/actions/toolkit/blob/main/packages/core/src/core.ts
 func getInput(inputName string, required bool) string {
-	input := os.Getenv(inputName)
+	input := os.Getenv(fmt.Sprintf("INPUT_%s", strings.ReplaceAll(strings.ToUpper(inputName), " ", "_")))
 	if required && strings.TrimSpace(input) == "" {
 		panic(fmt.Sprintf("Input required and not supplied: %s", inputName))
 	}
