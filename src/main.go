@@ -25,7 +25,8 @@ func main() {
 	ghToken := getInput("github_token", true)
 
 	// TODOs
-	// TODO @khongchai continue from here & use this https://github.com/google/go-github
+	// TODO @khongchai continue from here & use this
+	// https://github.com/google/go-github & https://github.com/nrwl/last-successful-commit-action/blob/master/index.js &  https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28
 	// get latest successful workflow runs
 	latestSuccessfulWorkflowRunCommit := getLastSuccessfulWorkflowRun(ghToken)
 
