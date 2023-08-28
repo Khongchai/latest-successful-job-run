@@ -6,6 +6,9 @@ inputs:
   job:
     description: "The name of the job to check for."
     required: true
+  token:
+    description: "The GitHub token to use for authentication."
+    required: true
 outputs:
   sha:
     description: "The SHA of the previous successful commit in which the specified job was successful"
@@ -15,3 +18,4 @@ runs:
   image: Dockerfile
   args:
     - ${{ inputs.job }}
+    - ${{ inputs.token }}

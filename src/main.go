@@ -17,7 +17,6 @@ const (
 	githubHeadRef    = "GITHUB_HEAD_REF"
 	githubOutput     = "GITHUB_OUTPUT"
 	githubRepository = "GITHUB_REPOSITORY"
-	githubToken      = "GITHUB_TOKEN"
 )
 
 func getCurrentBranchName() string {
@@ -101,16 +100,18 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 func main() {
 	log.Printf("Starting the action")
 
+	job := getInput("job", true)
+	token := getInput("token", true)
+
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv(githubToken)},
+		&oauth2.Token{AccessToken: token},
 	)
 	// TODO @khongchai delete this
-	log.Printf("Using token: %s", os.Getenv(githubToken))
+	log.Printf("Using token: %s", token)
+
 	tc := oauth2.NewClient(ctx, ts)
 	ghClient := github.NewClient(tc)
-
-	job := getInput("job", true)
 
 	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
 
