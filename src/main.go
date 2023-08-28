@@ -83,10 +83,6 @@ func main() {
 
 	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
 
-	// grab its hash
-	// get the current commit hash
-	// see if the output of git diff contains the files that were changed
-
 	setOutput("sha", sha)
 
 	log.Printf("Paths: %s", input)
@@ -96,4 +92,6 @@ func main() {
 
 	log.Printf("head ref: %s", os.Getenv("GITHUB_HEAD_REF"))
 	log.Printf("base ref: %s", os.Getenv("GITHUB_BASE_REF"))
+	log.Printf("ref: %s", os.Getenv("GITHUB_REF"))
+	log.Printf("sha: %s", os.Getenv("GITHUB_SHA"))
 }
