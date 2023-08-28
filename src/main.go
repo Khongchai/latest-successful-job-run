@@ -19,6 +19,11 @@ func getInput(inputName string, required bool) string {
 	return input
 }
 
+func setOutput(outputName string, value string) {
+	output := os.Getenv("GITHUB_OUTPUT")
+	fmt.Printf("::set-output name=my_output::%s\n", output)
+}
+
 // Return the commit hash of the last workflow run in which the specified job was successful.
 // Defaults to the commit hash of the latest commit if the job was never successful or if this was the first run.
 func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobName string) string {
@@ -72,8 +77,11 @@ func main() {
 	// get the current commit hash
 	// see if the output of git diff contains the files that were changed
 
+	setOutput("sha", sha)
+
 	log.Printf("Paths: %s", input)
 	log.Printf("The commit hash of the last successful run of the specified job: %s", sha)
 
-	// TODO diff to see the name of the files (or just make this return the sha)?
+	// TODO @khongchai set sha to output and just use that in the pipeline. No need to do the diffing anymore.
+	// TODO @khongchai and also, write the docs.
 }
