@@ -18,9 +18,9 @@ func getInput(inputName string, required bool) string {
 	return input
 }
 
-// Return the commit hash of the last workflow run in which the specified job was successful
-// TODO @khongchai return the commit hash.
-func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobName string) {
+// Return the commit hash of the last workflow run in which the specified job was successful.
+// Defaults to the commit hash of the latest commit if the job was never successful or if this was the first run.
+func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobName string) string {
 	owner_repo := strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")
 	owner := owner_repo[0]
 	repo := owner_repo[1]
@@ -30,10 +30,28 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 		panic(err)
 	}
 
-	// just print all the workflow runs for now
-	for _, run := range previousWorkflowRuns.WorkflowRuns {
-		fmt.Printf("Workflow run: %d\n", *run.ID)
+	// iterate the list of workflow from newest to oldest,
+	// if the workflow run contains the specified job and it was successful, return the commit hash
+	for _, workflowRun := range previousWorkflowRuns.WorkflowRuns {
+		if workflowRun.GetStatus() == "completed" {
+			workflowRunJobs, _, err := client.Actions.ListWorkflowJobs(ctx, owner, repo, workflowRun.GetID(), nil)
+			if err != nil {
+				fmt.Printf("Error getting workflow jobs: %s", err)
+				panic(err)
+			}
+
+			for _, workflowRunJob := range workflowRunJobs.Jobs {
+				if workflowRunJob.GetName() == jobName && workflowRunJob.GetStatus() == "completed" && workflowRunJob.GetConclusion() == "success" {
+					jobId := workflowRun.GetHeadCommit().GetID()
+					fmt.Printf("The hash of the latest commit in which the specified job was successful: %s", jobId)
+					return jobId
+				}
+			}
+		}
 	}
+
+	// default to the commit hash of the latest commit
+	return previousWorkflowRuns.WorkflowRuns[0].GetHeadCommit().GetID()
 }
 
 func main() {
@@ -43,13 +61,14 @@ func main() {
 	input := getInput("paths", true)
 	job := getInput("job", true)
 
-	getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
+	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
 
 	// grab its hash
 	// get the current commit hash
-	// git diff to see the name of the files
 	// see if the output of git diff contains the files that were changed
 
-	fmt.Println("Test action")
-	fmt.Printf("The input is %s", input)
+	fmt.Printf("Paths: %s", input)
+	fmt.Printf("The commit hash of the last successful run of the specified job: %s", sha)
+
+	// TODO diff to see the name of the files (or just make this return the sha)?
 }
