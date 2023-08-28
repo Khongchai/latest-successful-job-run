@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v54/github"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 	githubHeadRef    = "GITHUB_HEAD_REF"
 	githubOutput     = "GITHUB_OUTPUT"
 	githubRepository = "GITHUB_REPOSITORY"
+	githubToken      = "GITHUB_TOKEN"
 )
 
 func getCurrentBranchName() string {
@@ -61,7 +63,7 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	owner := owner_repo[0]
 	repo := owner_repo[1]
 	currentBranchName := getCurrentBranchName()
-	previousWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, nil)
+	previousWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, &github.ListWorkflowRunsOptions{})
 	if err != nil {
 		log.Printf("Error getting workflow runs: %s", err)
 		panic(err)
@@ -99,8 +101,12 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 func main() {
 	log.Printf("Starting the action")
 
-	ghClient := github.NewClient(nil)
 	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: os.Getenv(githubToken)},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	ghClient := github.NewClient(tc)
 
 	job := getInput("job", true)
 

@@ -1,3 +1,4 @@
+- [ ] Get the github token and use it (already included in the environment, I think).
 - [ ] Test it with the real branch
 - [ ] Write docs
 - [ ] Change name of repo and remove some functionality from the docs.
