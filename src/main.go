@@ -10,6 +10,25 @@ import (
 	"github.com/google/go-github/v54/github"
 )
 
+const (
+	githubEventName  = "GITHUB_EVENT_NAME"
+	githubRef        = "GITHUB_REF"
+	githubHeadRef    = "GITHUB_HEAD_REF"
+	githubOutput     = "GITHUB_OUTPUT"
+	githubRepository = "GITHUB_REPOSITORY"
+)
+
+func getCurrentBranchName() string {
+	// if is pull request
+	if os.Getenv(githubEventName) == "pull_request" {
+		log.Printf("Event is pull request, returning GITHUB_HEAD_REF")
+		return os.Getenv(githubHeadRef)
+	} else {
+		log.Printf("Event is not pull request, returning GITHUB_REF")
+		return os.Getenv(githubRef)
+	}
+}
+
 // https://github.com/actions/toolkit/blob/main/packages/core/src/core.ts
 func getInput(inputName string, required bool) string {
 	input := os.Getenv(fmt.Sprintf("INPUT_%s", strings.ReplaceAll(strings.ToUpper(inputName), " ", "_")))
@@ -21,7 +40,7 @@ func getInput(inputName string, required bool) string {
 
 // https://github.com/actions/toolkit/blob/main/packages/core/src/core.ts#L192C23-L192C23
 func setOutput(outputName string, value string) {
-	output := os.Getenv("GITHUB_OUTPUT")
+	output := os.Getenv(githubOutput)
 	f, err := os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("Error opening file: %s", err)
@@ -37,7 +56,7 @@ func setOutput(outputName string, value string) {
 // Return the commit hash of the last workflow run in which the specified job was successful.
 // Defaults to the commit hash of the latest commit if the job was never successful or if this was the first run.
 func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobName string) string {
-	owner_repo := strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")
+	owner_repo := strings.Split(os.Getenv(githubRepository), "/")
 	owner := owner_repo[0]
 	repo := owner_repo[1]
 	previousWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, nil)
@@ -88,10 +107,5 @@ func main() {
 	log.Printf("Paths: %s", input)
 	log.Printf("The commit hash of the last successful run of the specified job: %s", sha)
 
-	// testing zone
-
-	log.Printf("head ref: %s", os.Getenv("GITHUB_HEAD_REF"))
-	log.Printf("base ref: %s", os.Getenv("GITHUB_BASE_REF"))
-	log.Printf("ref: %s", os.Getenv("GITHUB_REF"))
-	log.Printf("sha: %s", os.Getenv("GITHUB_SHA"))
+	log.Printf("Branch name is %s", getCurrentBranchName())
 }
