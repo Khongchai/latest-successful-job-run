@@ -92,6 +92,8 @@ func main() {
 	log.Printf("Paths: %s", input)
 	log.Printf("The commit hash of the last successful run of the specified job: %s", sha)
 
-	// TODO @khongchai set sha to output and just use that in the pipeline. No need to do the diffing anymore.
-	// TODO @khongchai and also, write the docs.
+	// testing zone
+
+	log.Printf("head ref: %s", os.Getenv("GITHUB_HEAD_REF"))
+	log.Printf("base ref: %s", os.Getenv("GITHUB_BASE_REF"))
 }
