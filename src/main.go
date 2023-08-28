@@ -107,6 +107,4 @@ func main() {
 	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
 
 	setOutput("sha", sha)
-
-	log.Printf("The commit hash of the last successful run of the specified job: %s", sha)
 }
