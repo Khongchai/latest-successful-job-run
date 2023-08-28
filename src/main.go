@@ -78,9 +78,13 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 				panic(err)
 			}
 
+			thisRunCommitId := workflowRun.GetHeadCommit().GetID()
+			log.Printf("Checking all jobs in commit of id: %s", thisRunCommitId)
 			for _, workflowRunJob := range workflowRunJobs.Jobs {
-				thisRunCommitId := workflowRun.GetHeadCommit().GetID()
-				log.Printf("Checking against commit of id: %s", thisRunCommitId)
+				log.Printf("Job name: %s", workflowRunJob.GetName())
+				log.Printf("Job status: %s", workflowRunJob.GetStatus())
+				log.Printf("Job conclusion: %s", workflowRunJob.GetConclusion())
+				log.Printf("Job head branch: %s", workflowRunJob.GetHeadBranch())
 				if workflowRunJob.GetName() == jobName &&
 					workflowRunJob.GetStatus() == "completed" &&
 					workflowRunJob.GetConclusion() == "success" &&
