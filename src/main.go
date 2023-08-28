@@ -19,9 +19,19 @@ func getInput(inputName string, required bool) string {
 	return input
 }
 
+// https://github.com/actions/toolkit/blob/main/packages/core/src/core.ts#L192C23-L192C23
 func setOutput(outputName string, value string) {
 	output := os.Getenv("GITHUB_OUTPUT")
-	fmt.Printf("::set-output name=my_output::%s\n", output)
+	f, err := os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("Error opening file: %s", err)
+		panic(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(fmt.Sprintf("%s=%s\n", outputName, value)); err != nil {
+		log.Printf("Error writing to file: %s", err)
+		panic(err)
+	}
 }
 
 // Return the commit hash of the last workflow run in which the specified job was successful.
