@@ -51,6 +51,7 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	}
 
 	// default to the commit hash of the latest commit
+	fmt.Printf("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to the latest commit hash")
 	return previousWorkflowRuns.WorkflowRuns[0].GetHeadCommit().GetID()
 }
 
