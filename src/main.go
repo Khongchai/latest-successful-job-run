@@ -25,7 +25,8 @@ func getCurrentBranchName() string {
 		return os.Getenv(githubHeadRef)
 	} else {
 		log.Printf("Event is not pull request, returning GITHUB_REF")
-		return os.Getenv(githubRef)
+		// refs/heads/branch-name
+		return strings.Split(os.Getenv(githubRef), "/")[2]
 	}
 }
 
@@ -59,6 +60,7 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	owner_repo := strings.Split(os.Getenv(githubRepository), "/")
 	owner := owner_repo[0]
 	repo := owner_repo[1]
+	currentBranchName := getCurrentBranchName()
 	previousWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, nil)
 	if err != nil {
 		log.Printf("Error getting workflow runs: %s", err)
@@ -77,7 +79,10 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 
 			for _, workflowRunJob := range workflowRunJobs.Jobs {
 				log.Printf("Checking against job: %s", workflowRunJob.GetName())
-				if workflowRunJob.GetName() == jobName && workflowRunJob.GetStatus() == "completed" && workflowRunJob.GetConclusion() == "success" {
+				if workflowRunJob.GetName() == jobName &&
+					workflowRunJob.GetStatus() == "completed" &&
+					workflowRunJob.GetConclusion() == "success" &&
+					workflowRunJob.GetHeadBranch() == currentBranchName {
 					jobId := workflowRun.GetHeadCommit().GetID()
 					log.Printf("The hash of the latest commit in which the specified job was successful: %s", jobId)
 					return jobId
@@ -86,7 +91,7 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 		}
 	}
 
-	// default to the commit hash of the latest commit
+	// if is first ever workflow run, return
 	log.Printf("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to the latest commit hash")
 	return previousWorkflowRuns.WorkflowRuns[0].GetHeadCommit().GetID()
 }
@@ -97,15 +102,11 @@ func main() {
 	ghClient := github.NewClient(nil)
 	ctx := context.Background()
 
-	input := getInput("paths", true)
 	job := getInput("job", true)
 
 	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
 
 	setOutput("sha", sha)
 
-	log.Printf("Paths: %s", input)
 	log.Printf("The commit hash of the last successful run of the specified job: %s", sha)
-
-	log.Printf("Branch name is %s", getCurrentBranchName())
 }

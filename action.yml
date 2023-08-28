@@ -3,9 +3,6 @@ description: Compare the current commit with the previous successful commit and 
 author: khongchai
 
 inputs:
-  paths:
-    description: "The paths to check for changes. Supports glob patterns."
-    required: true
   job:
     description: "The name of the job to check for."
     required: true
