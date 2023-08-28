@@ -1,5 +1,5 @@
-name: Pathogenic Action Initiator
-description: Compare the current commit with the previous successful commit and return a single boolean value. Does nothing else.
+name: latest-successful-job-run
+description: Return the latest successful job run SHA for a given job name within a workflow of the current branch.
 author: khongchai
 
 inputs:
@@ -9,11 +9,9 @@ inputs:
 outputs:
   sha:
     description: "The SHA of the previous successful commit in which the specified job was successful"
-  changed:
-    description: "A boolean value indicating whether any of the paths have changed."
 
 runs:
   using: docker
   image: Dockerfile
   args:
-    - ${{ inputs.paths }}
+    - ${{ inputs.job }}
