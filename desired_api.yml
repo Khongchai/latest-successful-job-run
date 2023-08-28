@@ -13,14 +13,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      # This will compare the current commit with the previous successful commit.
-      # Normally, this is a combination of an action that gets the previous successful commit and
-      # an action that compares the current commit with the previous successful commit.
-      # This is a one-step action that does both, and nothing else.
+      # This will compare the current commit with any previous commit that contains a successful specified job.
       - name: Get all changed files in frontend folders
         id: prev-successful-changed-files
         uses: khongchai/pathogenic-action-intiator
         with:
+          job-name: chromatic-ci
           paths: |
             frontend/src/**/*
             packages/ui/src/**/*

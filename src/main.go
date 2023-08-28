@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/google/go-github/v54/github"
 )
 
 // https://github.com/actions/toolkit/blob/main/packages/core/src/core.ts
@@ -15,20 +18,33 @@ func getInput(inputName string, required bool) string {
 	return input
 }
 
-// Returns the commit hash of the latest successful workflow run.
-func getLastSuccessfulWorkflowRun(ghToken string) string {
+// Return the commit hash of the last workflow run in which the specified job was successful
+// TODO @khongchai return the commit hash.
+func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobName string) {
+	owner_repo := strings.Split(os.Getenv("GITHUB_REPOSITORY"), "/")
+	owner := owner_repo[0]
+	repo := owner_repo[1]
+	previousWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, nil)
+	if err != nil {
+		fmt.Printf("Error getting workflow runs: %s", err)
+		panic(err)
+	}
 
+	// just print all the workflow runs for now
+	for _, run := range previousWorkflowRuns.WorkflowRuns {
+		fmt.Printf("Workflow run: %d\n", *run.ID)
+	}
 }
 
 func main() {
-	input := getInput("paths", true)
-	ghToken := getInput("github_token", true)
+	ghClient := github.NewClient(nil)
+	ctx := context.Background()
 
-	// TODOs
-	// TODO @khongchai continue from here & use this
-	// https://github.com/google/go-github & https://github.com/nrwl/last-successful-commit-action/blob/master/index.js &  https://docs.github.com/en/rest/actions/workflows?apiVersion=2022-11-28
-	// get latest successful workflow runs
-	latestSuccessfulWorkflowRunCommit := getLastSuccessfulWorkflowRun(ghToken)
+	input := getInput("paths", true)
+	// ghToken := getInput("github_token", true)
+	job := getInput("job", true)
+
+	getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
 
 	// grab its hash
 	// get the current commit hash
