@@ -41,7 +41,6 @@ func main() {
 	ctx := context.Background()
 
 	input := getInput("paths", true)
-	// ghToken := getInput("github_token", true)
 	job := getInput("job", true)
 
 	getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
