@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -26,7 +27,7 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	repo := owner_repo[1]
 	previousWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, nil)
 	if err != nil {
-		fmt.Printf("Error getting workflow runs: %s", err)
+		log.Printf("Error getting workflow runs: %s", err)
 		panic(err)
 	}
 
@@ -36,14 +37,14 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 		if workflowRun.GetStatus() == "completed" {
 			workflowRunJobs, _, err := client.Actions.ListWorkflowJobs(ctx, owner, repo, workflowRun.GetID(), nil)
 			if err != nil {
-				fmt.Printf("Error getting workflow jobs: %s", err)
+				log.Printf("Error getting workflow jobs: %s", err)
 				panic(err)
 			}
 
 			for _, workflowRunJob := range workflowRunJobs.Jobs {
 				if workflowRunJob.GetName() == jobName && workflowRunJob.GetStatus() == "completed" && workflowRunJob.GetConclusion() == "success" {
 					jobId := workflowRun.GetHeadCommit().GetID()
-					fmt.Printf("The hash of the latest commit in which the specified job was successful: %s", jobId)
+					log.Printf("The hash of the latest commit in which the specified job was successful: %s", jobId)
 					return jobId
 				}
 			}
@@ -51,11 +52,14 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	}
 
 	// default to the commit hash of the latest commit
-	fmt.Printf("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to the latest commit hash")
+	log.Printf("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to the latest commit hash")
 	return previousWorkflowRuns.WorkflowRuns[0].GetHeadCommit().GetID()
 }
 
 func main() {
+	log.Print()
+	log.Printf("Starting the action")
+
 	ghClient := github.NewClient(nil)
 	ctx := context.Background()
 
@@ -68,8 +72,8 @@ func main() {
 	// get the current commit hash
 	// see if the output of git diff contains the files that were changed
 
-	fmt.Printf("Paths: %s", input)
-	fmt.Printf("The commit hash of the last successful run of the specified job: %s", sha)
+	log.Printf("Paths: %s", input)
+	log.Printf("The commit hash of the last successful run of the specified job: %s", sha)
 
 	// TODO diff to see the name of the files (or just make this return the sha)?
 }
