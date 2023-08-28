@@ -107,8 +107,6 @@ func main() {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
-	// TODO @khongchai delete this
-	log.Printf("Using token: %s", token)
 
 	tc := oauth2.NewClient(ctx, ts)
 	ghClient := github.NewClient(tc)
