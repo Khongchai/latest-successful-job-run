@@ -1,3 +1,1 @@
-- [ ] Test it with the real branch (might work now, just not the first time)
 - [ ] Write docs
-- [ ] Change name of repo and remove some functionality from the docs.
