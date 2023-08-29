@@ -81,6 +81,7 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 			thisRunCommitId := workflowRun.GetHeadCommit().GetID()
 			log.Printf("Checking all jobs in commit of id: %s", thisRunCommitId)
 			for _, workflowRunJob := range workflowRunJobs.Jobs {
+				log.Printf("Job Id: %d", workflowRunJob.GetID())
 				log.Printf("Job name: %s", workflowRunJob.GetName())
 				log.Printf("Job status: %s", workflowRunJob.GetStatus())
 				log.Printf("Job conclusion: %s", workflowRunJob.GetConclusion())
