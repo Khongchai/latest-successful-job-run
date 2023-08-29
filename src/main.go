@@ -103,8 +103,8 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	}
 
 	// if is first ever workflow run, return
-	log.Printf("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to the latest commit hash")
-	return previousCompletedWorkflowRuns.WorkflowRuns[0].GetHeadCommit().GetID()
+	log.Printf("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to emtpy string")
+	return ""
 }
 
 func main() {
