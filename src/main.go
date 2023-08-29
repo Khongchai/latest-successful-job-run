@@ -65,9 +65,6 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	previousCompletedWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, &github.ListWorkflowRunsOptions{
 		Status: "completed",
 		Branch: currentBranchName,
-		ListOptions: github.ListOptions{
-			PerPage: 100,
-		},
 	})
 	if err != nil {
 		log.Printf("Error getting workflow runs: %s", err)
@@ -77,9 +74,7 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	// iterate the list of workflow from newest to oldest,
 	// if the workflow run contains the specified job and it was successful, return the commit hash
 	for _, workflowRun := range previousCompletedWorkflowRuns.WorkflowRuns {
-		workflowRunJobs, _, err := client.Actions.ListWorkflowJobs(ctx, owner, repo, workflowRun.GetID(), &github.ListWorkflowJobsOptions{
-			ListOptions: github.ListOptions{PerPage: 100},
-		})
+		workflowRunJobs, _, err := client.Actions.ListWorkflowJobs(ctx, owner, repo, workflowRun.GetID(), nil)
 		if err != nil {
 			log.Printf("Error getting workflow jobs: %s", err)
 			panic(err)
