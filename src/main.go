@@ -57,12 +57,18 @@ func setOutput(outputName string, value string) {
 
 // Return the commit hash of the last workflow run in which the specified job was successful.
 // Defaults to the commit hash of the latest commit if the job was never successful or if this was the first run.
-func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobId string) string {
+func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobName string) string {
 	owner_repo := strings.Split(os.Getenv(githubRepository), "/")
 	owner := owner_repo[0]
 	repo := owner_repo[1]
 	currentBranchName := getCurrentBranchName()
-	previousWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, &github.ListWorkflowRunsOptions{})
+	previousCompletedWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, &github.ListWorkflowRunsOptions{
+		Status: "completed",
+		Branch: currentBranchName,
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	})
 	if err != nil {
 		log.Printf("Error getting workflow runs: %s", err)
 		panic(err)
@@ -70,43 +76,41 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 
 	// iterate the list of workflow from newest to oldest,
 	// if the workflow run contains the specified job and it was successful, return the commit hash
-	for _, workflowRun := range previousWorkflowRuns.WorkflowRuns {
-		if workflowRun.GetStatus() == "completed" {
-			workflowRunJobs, _, err := client.Actions.ListWorkflowJobs(ctx, owner, repo, workflowRun.GetID(), nil)
-			if err != nil {
-				log.Printf("Error getting workflow jobs: %s", err)
-				panic(err)
-			}
+	for _, workflowRun := range previousCompletedWorkflowRuns.WorkflowRuns {
+		workflowRunJobs, _, err := client.Actions.ListWorkflowJobs(ctx, owner, repo, workflowRun.GetID(), &github.ListWorkflowJobsOptions{
+			ListOptions: github.ListOptions{PerPage: 100},
+		})
+		if err != nil {
+			log.Printf("Error getting workflow jobs: %s", err)
+			panic(err)
+		}
 
-			thisRunCommitHash := workflowRun.GetHeadCommit().GetID()
-			log.Printf("Checking all jobs in commit of hash: %s", thisRunCommitHash)
-			for _, workflowRunJob := range workflowRunJobs.Jobs {
-				log.Printf("Job Id: %s", *workflowRunJob.Name)
-				log.Printf("Job name: %s", workflowRunJob.GetName())
-				log.Printf("Job status: %s", workflowRunJob.GetStatus())
-				log.Printf("Job conclusion: %s", workflowRunJob.GetConclusion())
-				log.Printf("Job head branch: %s", workflowRunJob.GetHeadBranch())
-				if *workflowRunJob.Name == jobId &&
-					workflowRunJob.GetStatus() == "completed" &&
-					workflowRunJob.GetConclusion() == "success" &&
-					workflowRunJob.GetHeadBranch() == currentBranchName {
-					log.Printf("The hash of the latest commit in which the specified job was successful: %s", thisRunCommitHash)
-					return thisRunCommitHash
-				}
+		thisRunCommitHash := workflowRun.GetHeadCommit().GetID()
+		log.Printf("Checking all jobs in commit of hash: %s", thisRunCommitHash)
+		for _, workflowRunJob := range workflowRunJobs.Jobs {
+			log.Printf("Job name: %s", workflowRunJob.GetName())
+			log.Printf("Job status: %s", workflowRunJob.GetStatus())
+			log.Printf("Job conclusion: %s", workflowRunJob.GetConclusion())
+			log.Printf("Job head branch: %s", workflowRunJob.GetHeadBranch())
+			if workflowRunJob.GetName() == jobName &&
+				workflowRunJob.GetStatus() == "completed" &&
+				workflowRunJob.GetConclusion() == "success" &&
+				workflowRunJob.GetHeadBranch() == currentBranchName {
+				log.Printf("The hash of the latest commit in which the specified job was successful: %s", thisRunCommitHash)
+				return thisRunCommitHash
 			}
 		}
 	}
 
 	// if is first ever workflow run, return
 	log.Printf("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to the latest commit hash")
-	return previousWorkflowRuns.WorkflowRuns[0].GetHeadCommit().GetID()
+	return previousCompletedWorkflowRuns.WorkflowRuns[0].GetHeadCommit().GetID()
 }
 
 func main() {
 	log.Printf("Starting the action")
 
-	jobId := getInput("job", true)
-	log.Printf("Current job name: %s", jobId)
+	jobName := getInput("job", true)
 	token := getInput("token", true)
 
 	ctx := context.Background()
@@ -117,7 +121,7 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	ghClient := github.NewClient(tc)
 
-	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, jobId)
+	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, jobName)
 
 	setOutput("sha", sha)
 }

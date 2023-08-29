@@ -3,8 +3,9 @@ description: Return the latest successful job run SHA for a given job name withi
 author: khongchai
 
 inputs:
+  # https://github.com/orgs/community/discussions/8945 cannot use job id :\
   job:
-    description: "The id of the current job"
+    description: "The name of the job to check for."
     required: true
   token:
     description: "The GitHub token to use for authentication."
