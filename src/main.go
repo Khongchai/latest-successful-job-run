@@ -65,7 +65,6 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 	previousCompletedWorkflowRuns, _, err := client.Actions.ListRepositoryWorkflowRuns(ctx, owner, repo, &github.ListWorkflowRunsOptions{
 		Status: "completed",
 		Branch: currentBranchName,
-		Actor:  owner,
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
