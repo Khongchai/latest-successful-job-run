@@ -4,7 +4,7 @@ author: khongchai
 
 inputs:
   job:
-    description: "The name of the job to check for."
+    description: "The id of the current job"
     required: true
   token:
     description: "The GitHub token to use for authentication."

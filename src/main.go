@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/v54/github"
@@ -57,7 +58,7 @@ func setOutput(outputName string, value string) {
 
 // Return the commit hash of the last workflow run in which the specified job was successful.
 // Defaults to the commit hash of the latest commit if the job was never successful or if this was the first run.
-func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobName string) string {
+func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Client, jobId int64) string {
 	owner_repo := strings.Split(os.Getenv(githubRepository), "/")
 	owner := owner_repo[0]
 	repo := owner_repo[1]
@@ -78,20 +79,20 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 				panic(err)
 			}
 
-			thisRunCommitId := workflowRun.GetHeadCommit().GetID()
-			log.Printf("Checking all jobs in commit of id: %s", thisRunCommitId)
+			thisRunCommitHash := workflowRun.GetHeadCommit().GetID()
+			log.Printf("Checking all jobs in commit of hash: %s", thisRunCommitHash)
 			for _, workflowRunJob := range workflowRunJobs.Jobs {
 				log.Printf("Job Id: %d", workflowRunJob.GetID())
 				log.Printf("Job name: %s", workflowRunJob.GetName())
 				log.Printf("Job status: %s", workflowRunJob.GetStatus())
 				log.Printf("Job conclusion: %s", workflowRunJob.GetConclusion())
 				log.Printf("Job head branch: %s", workflowRunJob.GetHeadBranch())
-				if workflowRunJob.GetName() == jobName &&
+				if workflowRunJob.GetID() == jobId &&
 					workflowRunJob.GetStatus() == "completed" &&
 					workflowRunJob.GetConclusion() == "success" &&
 					workflowRunJob.GetHeadBranch() == currentBranchName {
-					log.Printf("The hash of the latest commit in which the specified job was successful: %s", thisRunCommitId)
-					return thisRunCommitId
+					log.Printf("The hash of the latest commit in which the specified job was successful: %s", thisRunCommitHash)
+					return thisRunCommitHash
 				}
 			}
 		}
@@ -105,7 +106,11 @@ func getLastSuccessfulWorkflowRunCommit(ctx context.Context, client *github.Clie
 func main() {
 	log.Printf("Starting the action")
 
-	job := getInput("job", true)
+	jobId, err := strconv.ParseInt(getInput("job", true), 10, 64)
+	if err != nil {
+		log.Printf("Error parsing job id: %s", err)
+		panic(err)
+	}
 	token := getInput("token", true)
 
 	ctx := context.Background()
@@ -116,7 +121,7 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	ghClient := github.NewClient(tc)
 
-	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, job)
+	sha := getLastSuccessfulWorkflowRunCommit(ctx, ghClient, jobId)
 
 	setOutput("sha", sha)
 }
