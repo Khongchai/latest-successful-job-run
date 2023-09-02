@@ -1,0 +1,25 @@
+{
+  "name": "latest-successful-job-run",
+  "version": "2.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Khongchai/latest-successful-job-run.git"
+  },
+  "keywords": [],
+  "author": "khongchai",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Khongchai/latest-successful-job-run/issues"
+  },
+  "dependencies": {
+    "@actions/core": "~1.10.0",
+    "@actions/github": "~5.1.1"
+  },
+  "homepage": "https://github.com/Khongchai/latest-successful-job-run#readme",
+  "devDependencies": {
+    "@types/node": "^20.5.8"
+  }
+}

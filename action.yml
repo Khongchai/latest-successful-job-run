@@ -15,8 +15,5 @@ outputs:
     description: "The SHA of the previous successful commit in which the specified job was successful"
 
 runs:
-  using: docker
-  image: Dockerfile
-  args:
-    - ${{ inputs.job }}
-    - ${{ inputs.token }}
+  using: "node16"
+  main: "src/index.js"

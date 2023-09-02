@@ -1,1 +1,2 @@
+- [ ] an option to opt into  workflow comparison instead of just job comparison?
 - [ ] Write docs
