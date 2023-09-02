@@ -9706,7 +9706,7 @@ function getLastSuccessfulWorkflowRunCommit() {
             .listWorkflowRunsForRepo({
             owner,
             repo,
-            status: "success",
+            status: "completed",
             branch: currentBranchName,
         })
             .catch((e) => {
@@ -9714,7 +9714,7 @@ function getLastSuccessfulWorkflowRunCommit() {
         });
         // iterate the list of workflow from newest to oldest,
         // if the workflow run contains the specified job and it was successful, return the commit hash
-        previousCompletedWorkflowRuns.data.workflow_runs.forEach((workflowRun) => __awaiter(this, void 0, void 0, function* () {
+        for (const workflowRun of previousCompletedWorkflowRuns.data.workflow_runs) {
             const workflowRunJobs = yield octokit.rest.actions
                 .listJobsForWorkflowRun({
                 owner,
@@ -9733,11 +9733,11 @@ function getLastSuccessfulWorkflowRunCommit() {
                 if (job.name === jobName &&
                     job.status === "completed" &&
                     job.conclusion === "success") {
-                    console.info("The hash ov the latest commit in which the specified job was successful: ", thisRunCommitHash);
+                    console.info("The hash of the latest commit in which the specified job was successful: ", thisRunCommitHash);
                     return thisRunCommitHash;
                 }
             }
-        }));
+        }
         // if this is the first ever run of the workflow, return an empty string
         console.info("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to emtpy string");
         return "";
