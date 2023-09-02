@@ -1,7 +1,7 @@
 // @ts-check
 
-import * as core from "@actions/core";
-import * as github from "@actions/github";
+const core = require("@actions/core");
+const github = require("@actions/github");
 
 /**
  * @param {"GITHUB_EVENT_NAME" | "GITHUB_REF" | "GITHUB_HEAD_REF" | "GITHUB_OUTPUT" | "GITHUB_REPOSITORY"} key
