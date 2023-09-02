@@ -9631,6 +9631,131 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 9689:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(4740));
+const github = __importStar(__nccwpck_require__(8478));
+function ghEnv(key) {
+    return process.env[key];
+}
+function getCurrentBranchName() {
+    var _a;
+    if (ghEnv("GITHUB_EVENT_NAME") === "pull_request") {
+        console.info("Event is pull request, returning GITHUB_HEAD_REF");
+        const headRef = ghEnv("GITHUB_HEAD_REF");
+        if (!headRef) {
+            throw new Error("Could not get branch name from GITHUB_HEAD_REF");
+        }
+        return headRef;
+    }
+    console.info("Event is not pull request, returning GITHUB_REF");
+    const ref = (_a = ghEnv("GITHUB_REF")) === null || _a === void 0 ? void 0 : _a.split("/")[2];
+    if (!ref) {
+        throw new Error("Could not get branch name from GITHUB_REF");
+    }
+    return ref;
+}
+function getLastSuccessfulWorkflowRunCommit() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const jobName = core.getInput("job", {
+            required: true,
+        });
+        const token = core.getInput("token", {
+            required: true,
+        });
+        const octokit = github.getOctokit(token);
+        const { owner, repo } = github.context.repo;
+        const currentBranchName = getCurrentBranchName();
+        const previousCompletedWorkflowRuns = yield octokit.rest.actions
+            .listWorkflowRunsForRepo({
+            owner,
+            repo,
+            status: "success",
+            branch: currentBranchName,
+        })
+            .catch((e) => {
+            throw new Error(`Error getting workflow runs: ${e}`);
+        });
+        // iterate the list of workflow from newest to oldest,
+        // if the workflow run contains the specified job and it was successful, return the commit hash
+        previousCompletedWorkflowRuns.data.workflow_runs.forEach((workflowRun) => __awaiter(this, void 0, void 0, function* () {
+            const workflowRunJobs = yield octokit.rest.actions
+                .listJobsForWorkflowRun({
+                owner,
+                repo,
+                run_id: workflowRun.id,
+            })
+                .catch((e) => {
+                throw new Error(`Error getting workflow run jobs: ${e}`);
+            });
+            const thisRunCommitHash = workflowRun.head_sha;
+            console.info("Checking all jobs in commit of hash: ", thisRunCommitHash);
+            for (const job of workflowRunJobs.data.jobs) {
+                console.info("Job name: ", job.name);
+                console.info("Job status: ", job.status);
+                console.info("Job conclusion: ", job.conclusion);
+                if (job.name === jobName &&
+                    job.status === "completed" &&
+                    job.conclusion === "success") {
+                    console.info("The hash ov the latest commit in which the specified job was successful: ", thisRunCommitHash);
+                    return thisRunCommitHash;
+                }
+            }
+        }));
+        // if this is the first ever run of the workflow, return an empty string
+        console.info("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to emtpy string");
+        return "";
+    });
+}
+function main() {
+    return __awaiter(this, void 0, void 0, function* () {
+        console.info("Starting the action");
+        const sha = yield getLastSuccessfulWorkflowRunCommit();
+        core.setOutput("sha", sha);
+        console.info("Done");
+    });
+}
+main();
+
+
+/***/ }),
+
 /***/ 1665:
 /***/ ((module) => {
 
@@ -9805,121 +9930,12 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-(() => {
-// @ts-check
-
-const core = __nccwpck_require__(4740);
-const github = __nccwpck_require__(8478);
-
-/**
- * @param {"GITHUB_EVENT_NAME" | "GITHUB_REF" | "GITHUB_HEAD_REF" | "GITHUB_OUTPUT" | "GITHUB_REPOSITORY"} key
- * @returns {string | undefined}
- */
-function ghEnv(key) {
-  return process.env[key];
-}
-
-/**
- * @returns {string}
- */
-function getCurrentBranchName() {
-  if (ghEnv("GITHUB_EVENT_NAME") === "pull_request") {
-    console.info("Event is pull request, returning GITHUB_HEAD_REF");
-    const headRef = ghEnv("GITHUB_HEAD_REF");
-    if (!headRef) {
-      throw new Error("Could not get branch name from GITHUB_HEAD_REF");
-    }
-    return headRef;
-  }
-
-  console.info("Event is not pull request, returning GITHUB_REF");
-  const ref = ghEnv("GITHUB_REF")?.split("/")[2];
-  if (!ref) {
-    throw new Error("Could not get branch name from GITHUB_REF");
-  }
-  return ref;
-}
-
-async function getLastSuccessfulWorkflowRunCommit() {
-  const jobName = core.getInput("job", {
-    required: true,
-  });
-  const token = core.getInput("token", {
-    required: true,
-  });
-  const octokit = github.getOctokit(token);
-  const { owner, repo } = github.context.repo;
-  const currentBranchName = getCurrentBranchName();
-
-  const previousCompletedWorkflowRuns = await octokit.rest.actions
-    .listWorkflowRunsForRepo({
-      owner,
-      repo,
-      status: "success",
-      branch: currentBranchName,
-    })
-    .catch((e) => {
-      throw new Error(`Error getting workflow runs: ${e}`);
-    });
-
-  // iterate the list of workflow from newest to oldest,
-  // if the workflow run contains the specified job and it was successful, return the commit hash
-  previousCompletedWorkflowRuns.data.workflow_runs.forEach(
-    async (workflowRun) => {
-      const workflowRunJobs = await octokit.rest.actions
-        .listJobsForWorkflowRun({
-          owner,
-          repo,
-          run_id: workflowRun.id,
-        })
-        .catch((e) => {
-          throw new Error(`Error getting workflow run jobs: ${e}`);
-        });
-
-      const thisRunCommitHash = workflowRun.head_sha;
-      console.info("Checking all jobs in commit of hash: ", thisRunCommitHash);
-      for (const job of workflowRunJobs.data.jobs) {
-        console.info("Job name: ", job.name);
-        console.info("Job status: ", job.status);
-        console.info("Job conclusion: ", job.conclusion);
-
-        if (
-          job.name === jobName &&
-          job.status === "completed" &&
-          job.conclusion === "success"
-        ) {
-          console.info(
-            "The hash ov the latest commit in which the specified job was successful: ",
-            thisRunCommitHash
-          );
-          return thisRunCommitHash;
-        }
-      }
-    }
-  );
-
-  // if this is the first ever run of the workflow, return an empty string
-  console.info(
-    "Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to emtpy string"
-  );
-  return "";
-}
-
-async function main() {
-  console.info("Starting the action");
-
-  const sha = await getLastSuccessfulWorkflowRunCommit();
-  core.setOutput("sha", sha);
-
-  console.info("Done");
-}
-
-main();
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(9689);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;

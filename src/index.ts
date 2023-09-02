@@ -1,20 +1,18 @@
-// @ts-check
+import * as core from "@actions/core";
+import * as github from "@actions/github";
 
-const core = require("@actions/core");
-const github = require("@actions/github");
-
-/**
- * @param {"GITHUB_EVENT_NAME" | "GITHUB_REF" | "GITHUB_HEAD_REF" | "GITHUB_OUTPUT" | "GITHUB_REPOSITORY"} key
- * @returns {string | undefined}
- */
-function ghEnv(key) {
+function ghEnv(
+  key:
+    | "GITHUB_EVENT_NAME"
+    | "GITHUB_REF"
+    | "GITHUB_HEAD_REF"
+    | "GITHUB_OUTPUT"
+    | "GITHUB_REPOSITORY"
+): string | undefined {
   return process.env[key];
 }
 
-/**
- * @returns {string}
- */
-function getCurrentBranchName() {
+function getCurrentBranchName(): string {
   if (ghEnv("GITHUB_EVENT_NAME") === "pull_request") {
     console.info("Event is pull request, returning GITHUB_HEAD_REF");
     const headRef = ghEnv("GITHUB_HEAD_REF");

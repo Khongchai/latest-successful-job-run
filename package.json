@@ -2,7 +2,7 @@
   "name": "latest-successful-job-run",
   "version": "2.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {},
   "repository": {
     "type": "git",
@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/Khongchai/latest-successful-job-run#readme",
   "devDependencies": {
-    "@types/node": "^20.5.8"
+    "@types/node": "^20.5.8",
+    "typescript": "^5.2.2"
   }
 }

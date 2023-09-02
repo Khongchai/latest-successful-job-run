@@ -1,1 +1,1 @@
-ncc build index.js --license licenses.txt
+ncc build src/index.ts --license licenses.txt
