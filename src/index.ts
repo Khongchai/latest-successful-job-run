@@ -45,7 +45,7 @@ async function getLastSuccessfulWorkflowRunCommit() {
     .listWorkflowRunsForRepo({
       owner,
       repo,
-      status: "success",
+      status: "completed",
       branch: currentBranchName,
     })
     .catch((e) => {
@@ -54,39 +54,37 @@ async function getLastSuccessfulWorkflowRunCommit() {
 
   // iterate the list of workflow from newest to oldest,
   // if the workflow run contains the specified job and it was successful, return the commit hash
-  previousCompletedWorkflowRuns.data.workflow_runs.forEach(
-    async (workflowRun) => {
-      const workflowRunJobs = await octokit.rest.actions
-        .listJobsForWorkflowRun({
-          owner,
-          repo,
-          run_id: workflowRun.id,
-        })
-        .catch((e) => {
-          throw new Error(`Error getting workflow run jobs: ${e}`);
-        });
+  for (const workflowRun of previousCompletedWorkflowRuns.data.workflow_runs) {
+    const workflowRunJobs = await octokit.rest.actions
+      .listJobsForWorkflowRun({
+        owner,
+        repo,
+        run_id: workflowRun.id,
+      })
+      .catch((e) => {
+        throw new Error(`Error getting workflow run jobs: ${e}`);
+      });
 
-      const thisRunCommitHash = workflowRun.head_sha;
-      console.info("Checking all jobs in commit of hash: ", thisRunCommitHash);
-      for (const job of workflowRunJobs.data.jobs) {
-        console.info("Job name: ", job.name);
-        console.info("Job status: ", job.status);
-        console.info("Job conclusion: ", job.conclusion);
+    const thisRunCommitHash = workflowRun.head_sha;
+    console.info("Checking all jobs in commit of hash: ", thisRunCommitHash);
+    for (const job of workflowRunJobs.data.jobs) {
+      console.info("Job name: ", job.name);
+      console.info("Job status: ", job.status);
+      console.info("Job conclusion: ", job.conclusion);
 
-        if (
-          job.name === jobName &&
-          job.status === "completed" &&
-          job.conclusion === "success"
-        ) {
-          console.info(
-            "The hash ov the latest commit in which the specified job was successful: ",
-            thisRunCommitHash
-          );
-          return thisRunCommitHash;
-        }
+      if (
+        job.name === jobName &&
+        job.status === "completed" &&
+        job.conclusion === "success"
+      ) {
+        console.info(
+          "The hash of the latest commit in which the specified job was successful: ",
+          thisRunCommitHash
+        );
+        return thisRunCommitHash;
       }
     }
-  );
+  }
 
   // if this is the first ever run of the workflow, return an empty string
   console.info(
