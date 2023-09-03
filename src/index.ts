@@ -30,16 +30,66 @@ function getCurrentBranchName(): string {
   return ref;
 }
 
-async function getLastSuccessfulWorkflowRunCommit() {
+function getJobName() {
   const jobName = core.getInput("job", {
-    required: true,
+    required: false,
   });
+  if (!jobName) {
+    console.info(
+      "Job name not provied, checking for the commit hash of the latest successful workflow run instead"
+    );
+  } else {
+    console.info(
+      "Checking for the commit hash of the latest successful workflow run of job: ",
+      jobName
+    );
+  }
+  return jobName;
+}
+
+function getToken() {
   const token = core.getInput("token", {
     required: true,
   });
+  console.info("Token: ", token);
+  return token;
+}
+
+async function getLastSuccessfulWorkflowRunCommit() {
+  const jobName = getJobName();
+  const useLatestSuccessfulWorkflowRun = !jobName;
+  const token = getToken();
   const octokit = github.getOctokit(token);
   const { owner, repo } = github.context.repo;
   const currentBranchName = getCurrentBranchName();
+
+  if (useLatestSuccessfulWorkflowRun) {
+    const result = await octokit.rest.actions
+      .listWorkflowRunsForRepo({
+        owner,
+        repo,
+        status: "success",
+        branch: currentBranchName,
+        page: 1,
+        per_page: 1,
+      })
+      .catch((e) => {
+        throw new Error(`Error getting workflow runs: ${e}`);
+      });
+
+    if (result.data.workflow_runs.length === 0) {
+      console.info(
+        "No successful workflow runs found, defaulting to empty string"
+      );
+      return "";
+    }
+
+    const workflowRun = result.data.workflow_runs[0];
+    console.info(
+      "Latest successful workflow run commit hash: ",
+      workflowRun.head_sha
+    );
+  }
 
   const previousCompletedWorkflowRuns = await octokit.rest.actions
     .listWorkflowRunsForRepo({
