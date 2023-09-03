@@ -1,8 +1,12 @@
 # Latest Successful Job Run
 
-Despite the name, this action can return both the latest successful job or a workflow run for a branch, depending on the inputs provided.
+Despite the name, this action can return both the latest successful job or a workflow run for **current branch**, depending on the inputs provided.
 
 If the `job` argument is supplied, the action will return the SHA of the commit in which the provided `job`_(the name of your job, as appeared in github action console)_ ran successfully. Otherwise it returns the SHA of the commit of the latest successful workflow run. If it could not find a successful job or workflow run, it will return an empty string.
+
+# Inputs and Outputs
+
+View the `action.yml` file at the root of this repo.
 
 # Getting Started
 
