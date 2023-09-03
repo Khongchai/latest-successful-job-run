@@ -84,11 +84,9 @@ async function getLastSuccessfulWorkflowRunCommit() {
       return "";
     }
 
-    const workflowRun = result.data.workflow_runs[0];
-    console.info(
-      "Latest successful workflow run commit hash: ",
-      workflowRun.head_sha
-    );
+    const sha = result.data.workflow_runs[0].head_sha;
+    console.info("Latest successful workflow run commit hash: ", sha);
+    return sha;
   }
 
   const previousCompletedWorkflowRuns = await octokit.rest.actions
