@@ -34,7 +34,7 @@ jobs:
     steps:
       - name: My successful job
         id: successful_job
-        uses: khongchai/latest-successful-job-run@v2
+        uses: khongchai/latest-successful-job-run@v2.1.0
         with:
           # `job` must be provided
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -66,7 +66,7 @@ jobs:
     steps:
       - name: My successful job
         id: successful_job
-        uses: khongchai/latest-successful-job-run@v2
+        uses: khongchai/latest-successful-job-run@v2.1.0
         with:
           # provide just the token
           token: ${{ secrets.GITHUB_TOKEN }}

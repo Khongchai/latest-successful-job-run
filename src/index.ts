@@ -85,9 +85,6 @@ async function handleJobSha({
     .listWorkflowRunsForRepo({
       owner,
       repo,
-      // using completed because we don't care about the status of the workflow, fail, or success, as long as it's completed
-      // we just want a job that was successful
-      status: "completed",
       branch: currentBranchName,
     })
     .catch((e) => {
