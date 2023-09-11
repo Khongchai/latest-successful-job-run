@@ -15,7 +15,9 @@ function ghEnv(
 }
 
 function getCurrentBranchName(): string {
-  if (ghEnv("GITHUB_EVENT_NAME") === "pull_request") {
+  const eventName = ghEnv("GITHUB_EVENT_NAME");
+  console.info("Event name is: ", eventName);
+  if (eventName === "pull_request") {
     console.info("Event is pull request, returning GITHUB_HEAD_REF");
     const headRef = ghEnv("GITHUB_HEAD_REF");
     if (!headRef) {
