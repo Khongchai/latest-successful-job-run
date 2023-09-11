@@ -9776,6 +9776,7 @@ function getSha() {
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
         const currentBranchName = getCurrentBranchName();
+        console.info("Current branch name: " + currentBranchName);
         if (useLatestSuccessfulWorkflowRun) {
             return handleWorkflowRunSha({
                 octokit,

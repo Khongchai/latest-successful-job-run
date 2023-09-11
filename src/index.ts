@@ -159,6 +159,8 @@ async function getSha() {
 
   const currentBranchName = getCurrentBranchName();
 
+  console.info("Current branch name: " + currentBranchName);
+
   if (useLatestSuccessfulWorkflowRun) {
     return handleWorkflowRunSha({
       octokit,
