@@ -9687,7 +9687,7 @@ function getCurrentBranchName() {
         return headRef;
     }
     console.info("Event is not pull request, returning GITHUB_REF");
-    const ref = (_a = ghEnv("GITHUB_REF")) === null || _a === void 0 ? void 0 : _a.split("/")[2];
+    const ref = (_a = ghEnv("GITHUB_REF")) === null || _a === void 0 ? void 0 : _a.replace("refs/heads/", "");
     if (!ref) {
         throw new Error("Could not get branch name from GITHUB_REF");
     }
