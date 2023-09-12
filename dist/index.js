@@ -9676,27 +9676,22 @@ const github = __importStar(__nccwpck_require__(9714));
  */
 function filterWorkflowRuns({ runs, oktokit, owner, repo, currentBranchName, }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const last100CommitsOfThisBranch = yield oktokit.rest.repos
-            .listCommits({
+        const last100CommitsOfThisBranch = yield oktokit.rest.repos.listCommits({
             owner,
             repo,
             sha: currentBranchName,
             per_page: 100,
             page: 1,
-        })
-            .then((res) => {
-            const existingSha = res.data.map((commit) => commit.sha);
-            console.info("Last 100 commits of the current branch: ", existingSha.join(", "));
-            return new Set(existingSha);
         });
+        const sha = last100CommitsOfThisBranch.data.map((commit) => commit.sha);
+        console.info("Last 100 commits of the current branch: ", sha.join(", "));
+        const shaSet = new Set(sha);
+        const filtered = runs.filter((run) => shaSet.has(run.head_sha));
         // if the current branch has no commits, return an empty string
-        if (last100CommitsOfThisBranch.entries.length === 0) {
+        if (filtered.length === 0) {
             console.info("No commits found in the current branch, defaulting to empty string");
-            return [];
         }
-        return runs.filter((run) => {
-            return last100CommitsOfThisBranch.has(run.head_sha);
-        });
+        return filtered;
     });
 }
 function ghEnv(key) {
