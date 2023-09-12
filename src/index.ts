@@ -3,6 +3,52 @@ import * as github from "@actions/github";
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 
+/**
+ * As a result of rebasing, the run history of a branch may contain commits that are not present in the current branch.
+ */
+async function filterWorkflowRuns<T extends { head_sha: string }>({
+  runs,
+  oktokit,
+  owner,
+  repo,
+  currentBranchName,
+}: {
+  runs: T[];
+  oktokit: Octokit;
+  owner: string;
+  repo: string;
+  currentBranchName: string;
+}): Promise<T[]> {
+  const last100CommitsOfThisBranch = await oktokit.rest.repos
+    .listCommits({
+      owner,
+      repo,
+      sha: currentBranchName,
+      per_page: 100,
+      page: 1,
+    })
+    .then((res) => {
+      const existingSha = res.data.map((commit) => commit.sha);
+      console.info(
+        "Last 100 commits of the current branch: ",
+        existingSha.join(", ")
+      );
+      return new Set(existingSha);
+    });
+
+  // if the current branch has no commits, return an empty string
+  if (last100CommitsOfThisBranch.entries.length === 0) {
+    console.info(
+      "No commits found in the current branch, defaulting to empty string"
+    );
+    return [];
+  }
+
+  return runs.filter((run) => {
+    return last100CommitsOfThisBranch.has(run.head_sha);
+  });
+}
+
 function ghEnv(
   key:
     | "GITHUB_EVENT_NAME"
@@ -52,20 +98,28 @@ async function handleWorkflowRunSha({
       status: "success",
       branch: currentBranchName,
       page: 1,
-      per_page: 1,
+      per_page: 100,
     })
     .catch((e) => {
       throw new Error(`Error getting workflow runs: ${e}`);
     });
 
-  if (result.data.workflow_runs.length === 0) {
+  const filteredWorkflowRuns = await filterWorkflowRuns({
+    runs: result.data.workflow_runs,
+    oktokit: octokit,
+    owner,
+    repo,
+    currentBranchName,
+  });
+
+  if (filteredWorkflowRuns.length === 0) {
     console.info(
       "No successful workflow runs found, defaulting to empty string"
     );
     return "";
   }
 
-  const sha = result.data.workflow_runs[0].head_sha;
+  const sha = filteredWorkflowRuns[0].head_sha;
   console.info("Latest successful workflow run commit hash: ", sha);
   return sha;
 }
@@ -93,9 +147,16 @@ async function handleJobSha({
       throw new Error(`Error getting workflow runs: ${e}`);
     });
 
+  const filteredWorkflowRuns = await filterWorkflowRuns({
+    runs: previousCompletedWorkflowRuns.data.workflow_runs,
+    oktokit: octokit,
+    owner,
+    repo,
+    currentBranchName,
+  });
   // iterate the list of workflow from newest to oldest,
   // if the workflow run contains the specified job and it was successful, return the commit hash
-  for (const workflowRun of previousCompletedWorkflowRuns.data.workflow_runs) {
+  for (const workflowRun of filteredWorkflowRuns) {
     const workflowRunJobs = await octokit.rest.actions
       .listJobsForWorkflowRun({
         owner,
@@ -134,7 +195,7 @@ async function handleJobSha({
   return "";
 }
 
-async function getSha() {
+async function getSha(): Promise<string> {
   const jobName = core.getInput("job", {
     required: false,
   });
