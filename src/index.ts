@@ -28,9 +28,19 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
   });
 
   const sha = last100CommitsOfThisBranch.data.map((commit) => commit.sha);
+  console.info("Last 100 commits of the current branch: ", sha.join(", "));
   const shaSet = new Set(sha);
 
-  return runs.filter((run) => shaSet.has(run.head_sha));
+  const filtered = runs.filter((run) => shaSet.has(run.head_sha));
+
+  // if the current branch has no commits, return an empty string
+  if (filtered.length === 0) {
+    console.info(
+      "No commits found in the current branch, defaulting to empty string"
+    );
+  }
+
+  return filtered;
 }
 
 function ghEnv(
