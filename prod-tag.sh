@@ -17,4 +17,9 @@ git push
 git tag $TAG_VERSION -m "New tag $TAG_VERSION"
 git push origin $TAG_VERSION 
 
+if [ $? -ne 0 ]; then
+  echo "Tagging failed."
+  exit 1
+fi
+
 echo "Tagged $TAG_VERSION"
