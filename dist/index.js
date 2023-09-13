@@ -9677,7 +9677,7 @@ const github = __importStar(__nccwpck_require__(9714));
 function filterWorkflowRuns({ runs, oktokit, owner, repo, currentBranchName, }) {
     return __awaiter(this, void 0, void 0, function* () {
         console.info("::group::Filtering workflow runs");
-        console.info("Received workflow runs: ", runs.map((run) => run.head_sha).join(", "));
+        console.info("Received successful workflow runs: ", runs.map((run) => run.head_sha).join(", "));
         const last100CommitsOfThisBranch = yield oktokit.rest.repos.listCommits({
             owner,
             repo,
