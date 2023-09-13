@@ -13,7 +13,6 @@ git commit -m "New tag $TAG_VERSION"
 
 git push
 
-# if tag exists, fail
 git tag $TAG_VERSION -m "New tag $TAG_VERSION"
 if [ $? -ne 0 ]; then
   echo "Tagging failed."
