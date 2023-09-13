@@ -19,6 +19,8 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
   repo: string;
   currentBranchName: string;
 }): Promise<T[]> {
+  console.info("::group::Filtering workflow runs");
+
   const last100CommitsOfThisBranch = await oktokit.rest.repos.listCommits({
     owner,
     repo,
@@ -35,10 +37,10 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
 
   // if the current branch has no commits, return an empty string
   if (filtered.length === 0) {
-    console.info(
-      "No commits found in the current branch, defaulting to empty string"
-    );
+    console.info("No commits found in the current branch after filtering");
   }
+
+  console.info("::endgroup::");
 
   return filtered;
 }
@@ -55,6 +57,8 @@ function ghEnv(
 }
 
 function getCurrentBranchName(): string {
+  console.info("::group::Getting current branch name");
+
   const eventName = ghEnv("GITHUB_EVENT_NAME");
   console.info("Event name is: ", eventName);
   if (eventName === "pull_request") {
@@ -71,6 +75,10 @@ function getCurrentBranchName(): string {
   if (!ref) {
     throw new Error("Could not get branch name from GITHUB_REF");
   }
+
+  console.info("Current branch name: ", ref);
+
+  console.info("::endgroup::");
   return ref;
 }
 
@@ -162,7 +170,10 @@ async function handleJobSha({
       });
 
     const thisRunCommitHash = workflowRun.head_sha;
-    console.info("Checking all jobs in commit of hash: ", thisRunCommitHash);
+    console.info(
+      "::group::Checking all jobs in commit of hash: ",
+      thisRunCommitHash
+    );
     for (const job of workflowRunJobs.data.jobs) {
       console.info("Job name: ", job.name);
       console.info("Job status: ", job.status);
@@ -177,6 +188,7 @@ async function handleJobSha({
           "The hash of the latest commit in which the specified job was successful: ",
           thisRunCommitHash
         );
+        console.info("::endgroup::");
         return thisRunCommitHash;
       }
     }
@@ -186,6 +198,7 @@ async function handleJobSha({
   console.info(
     "Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to emtpy string"
   );
+  console.info("::endgroup::");
   return "";
 }
 

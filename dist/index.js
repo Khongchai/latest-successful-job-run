@@ -9676,6 +9676,7 @@ const github = __importStar(__nccwpck_require__(9714));
  */
 function filterWorkflowRuns({ runs, oktokit, owner, repo, currentBranchName, }) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.info("::group::Filtering workflow runs");
         const last100CommitsOfThisBranch = yield oktokit.rest.repos.listCommits({
             owner,
             repo,
@@ -9689,8 +9690,9 @@ function filterWorkflowRuns({ runs, oktokit, owner, repo, currentBranchName, }) 
         const filtered = runs.filter((run) => shaSet.has(run.head_sha));
         // if the current branch has no commits, return an empty string
         if (filtered.length === 0) {
-            console.info("No commits found in the current branch, defaulting to empty string");
+            console.info("No commits found in the current branch after filtering");
         }
+        console.info("::endgroup::");
         return filtered;
     });
 }
@@ -9699,6 +9701,7 @@ function ghEnv(key) {
 }
 function getCurrentBranchName() {
     var _a;
+    console.info("::group::Getting current branch name");
     const eventName = ghEnv("GITHUB_EVENT_NAME");
     console.info("Event name is: ", eventName);
     if (eventName === "pull_request") {
@@ -9714,6 +9717,8 @@ function getCurrentBranchName() {
     if (!ref) {
         throw new Error("Could not get branch name from GITHUB_REF");
     }
+    console.info("Current branch name: ", ref);
+    console.info("::endgroup::");
     return ref;
 }
 function handleWorkflowRunSha({ octokit, owner, repo, currentBranchName, }) {
@@ -9777,7 +9782,7 @@ function handleJobSha({ octokit, owner, repo, currentBranchName, jobName, }) {
                 throw new Error(`Error getting workflow run jobs: ${e}`);
             });
             const thisRunCommitHash = workflowRun.head_sha;
-            console.info("Checking all jobs in commit of hash: ", thisRunCommitHash);
+            console.info("::group::Checking all jobs in commit of hash: ", thisRunCommitHash);
             for (const job of workflowRunJobs.data.jobs) {
                 console.info("Job name: ", job.name);
                 console.info("Job status: ", job.status);
@@ -9786,12 +9791,14 @@ function handleJobSha({ octokit, owner, repo, currentBranchName, jobName, }) {
                     job.status === "completed" &&
                     job.conclusion === "success") {
                     console.info("The hash of the latest commit in which the specified job was successful: ", thisRunCommitHash);
+                    console.info("::endgroup::");
                     return thisRunCommitHash;
                 }
             }
         }
         // if this is the first ever run of the workflow, return an empty string
         console.info("Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to emtpy string");
+        console.info("::endgroup::");
         return "";
     });
 }
