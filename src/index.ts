@@ -21,6 +21,11 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
 }): Promise<T[]> {
   console.info("::group::Filtering workflow runs");
 
+  console.info(
+    "Received successful workflow runs: ",
+    runs.map((run) => run.head_sha).join(", ")
+  );
+
   const last100CommitsOfThisBranch = await oktokit.rest.repos.listCommits({
     owner,
     repo,
