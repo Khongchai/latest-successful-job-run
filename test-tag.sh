@@ -1,3 +1,5 @@
+# sh test-tag.sh
+
 sh compile.sh
 
 git add .

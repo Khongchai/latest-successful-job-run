@@ -1,3 +1,5 @@
+# sh prod-tag.sh v2.x.x
+
 TAG_VERSION=$1
 
 if [ -z "$TAG_VERSION" ]; then
