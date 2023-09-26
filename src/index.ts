@@ -19,11 +19,11 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
   repo: string;
   currentBranchName: string;
 }): Promise<T[]> {
-  console.info("::group::Filtering workflow runs");
+  core.info("::group::Filtering workflow runs");
 
-  console.info(
-    "Received successful workflow runs: ",
-    runs.map((run) => run.head_sha).join(", ")
+  core.info(
+    "Received successful workflow runs: " +
+      runs.map((run) => run.head_sha).join(", ")
   );
 
   const last100CommitsOfThisBranch = await oktokit.rest.repos.listCommits({
@@ -35,17 +35,17 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
   });
 
   const sha = last100CommitsOfThisBranch.data.map((commit) => commit.sha);
-  console.info("Last 100 commits of the current branch: ", sha.join(", "));
+  core.info("Last 100 commits of the current branch: " + sha.join(", "));
   const shaSet = new Set(sha);
 
   const filtered = runs.filter((run) => shaSet.has(run.head_sha));
 
   // if the current branch has no commits, return an empty string
   if (filtered.length === 0) {
-    console.info("No commits found in the current branch after filtering");
+    core.info("No commits found in the current branch after filtering");
   }
 
-  console.info("::endgroup::");
+  core.info("::endgroup::");
 
   return filtered;
 }
@@ -62,12 +62,12 @@ function ghEnv(
 }
 
 function getCurrentBranchName(): string {
-  console.info("::group::Getting current branch name");
+  core.info("::group::Getting current branch name");
 
   const eventName = ghEnv("GITHUB_EVENT_NAME");
-  console.info("Event name is: ", eventName);
+  core.info("Event name is: " + eventName);
   if (eventName === "pull_request") {
-    console.info("Event is pull request, returning GITHUB_HEAD_REF");
+    core.info("Event is pull request, returning GITHUB_HEAD_REF");
     const headRef = ghEnv("GITHUB_HEAD_REF");
     if (!headRef) {
       throw new Error("Could not get branch name from GITHUB_HEAD_REF");
@@ -75,15 +75,15 @@ function getCurrentBranchName(): string {
     return headRef;
   }
 
-  console.info("Event is not pull request, returning GITHUB_REF");
+  core.info("Event is not pull request, returning GITHUB_REF");
   const ref = ghEnv("GITHUB_REF")?.replace("refs/heads/", "");
   if (!ref) {
     throw new Error("Could not get branch name from GITHUB_REF");
   }
 
-  console.info("Current branch name: ", ref);
+  core.info("Current branch name: " + ref);
 
-  console.info("::endgroup::");
+  core.info("::endgroup::");
   return ref;
 }
 
@@ -120,14 +120,12 @@ async function handleWorkflowRunSha({
   });
 
   if (filteredWorkflowRuns.length === 0) {
-    console.info(
-      "No successful workflow runs found, defaulting to empty string"
-    );
+    core.info("No successful workflow runs found, defaulting to empty string");
     return "";
   }
 
   const sha = filteredWorkflowRuns[0].head_sha;
-  console.info("Latest successful workflow run commit hash: ", sha);
+  core.info("Latest successful workflow run commit hash: " + sha);
   return sha;
 }
 
@@ -175,35 +173,34 @@ async function handleJobSha({
       });
 
     const thisRunCommitHash = workflowRun.head_sha;
-    console.info(
-      "::group::Checking all jobs in commit of hash: ",
-      thisRunCommitHash
+    core.info(
+      "::group::Checking all jobs in commit of hash: " + thisRunCommitHash
     );
     for (const job of workflowRunJobs.data.jobs) {
-      console.info("Job name: ", job.name);
-      console.info("Job status: ", job.status);
-      console.info("Job conclusion: ", job.conclusion);
+      core.info("Job name: " + job.name);
+      core.info("Job status: " + job.status);
+      core.info("Job conclusion: " + job.conclusion);
 
       if (
         job.name === jobName &&
         job.status === "completed" &&
         job.conclusion === "success"
       ) {
-        console.info(
-          "The hash of the latest commit in which the specified job was successful: ",
-          thisRunCommitHash
+        core.info(
+          "The hash of the latest commit in which the specified job was successful: " +
+            thisRunCommitHash
         );
-        console.info("::endgroup::");
+        core.info("::endgroup::");
         return thisRunCommitHash;
       }
     }
   }
 
   // if this is the first ever run of the workflow, return an empty string
-  console.info(
+  core.info(
     "Unable to find the specified job in successful state in any of the previous workflow runs, defaulting to emtpy string"
   );
-  console.info("::endgroup::");
+  core.info("::endgroup::");
   return "";
 }
 
@@ -211,16 +208,12 @@ async function getSha(): Promise<string> {
   const jobName = core.getInput("job", {
     required: false,
   });
-  if (!jobName) {
-    console.info(
-      "Job name not provied, checking for the commit hash of the latest successful workflow run instead"
-    );
-  } else {
-    console.info(
-      "Checking for the commit hash of the latest successful workflow run of job: ",
-      jobName
-    );
-  }
+  const workflowId = core.getInput("workflow_id", {
+    required: false,
+  });
+  if (jobName) core.info("Job name provided: " + jobName);
+  if (workflowId) core.info("Workflow id provided: " + workflowId);
+
   const useLatestSuccessfulWorkflowRun = !jobName;
 
   const token = core.getInput("token", {
@@ -232,7 +225,7 @@ async function getSha(): Promise<string> {
 
   const currentBranchName = getCurrentBranchName();
 
-  console.info("Current branch name: " + currentBranchName);
+  core.info("Current branch name: " + currentBranchName);
 
   if (useLatestSuccessfulWorkflowRun) {
     return handleWorkflowRunSha({
@@ -253,13 +246,13 @@ async function getSha(): Promise<string> {
 }
 
 async function main() {
-  console.info("Starting the action");
+  core.info("Starting the action");
 
   const sha = await getSha();
 
   core.setOutput("sha", sha);
 
-  console.info("Done");
+  core.info("Done");
 }
 
 main();
