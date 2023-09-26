@@ -9,7 +9,7 @@ inputs:
     description: "The name of the job to check for."
     required: false
   workflow_id:
-    description: "The file name of the workflow to check for."
+    description: "The workflow id or the file name of the workflow to check for."
     required: false
   token:
     description: "The GitHub token to use for authentication."

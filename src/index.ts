@@ -21,7 +21,7 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
 }): Promise<T[]> {
   core.info("::group::Filtering workflow runs");
 
-  core.info(
+  core.debug(
     "Received successful workflow runs: " +
       runs.map((run) => run.head_sha).join(", ")
   );
@@ -35,7 +35,7 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
   });
 
   const sha = last100CommitsOfThisBranch.data.map((commit) => commit.sha);
-  core.info("Last 100 commits of the current branch: " + sha.join(", "));
+  core.debug("Last 100 commits of the current branch: " + sha.join(", "));
   const shaSet = new Set(sha);
 
   const filtered = runs.filter((run) => shaSet.has(run.head_sha));
@@ -62,12 +62,12 @@ function ghEnv(
 }
 
 function getCurrentBranchName(): string {
-  core.info("::group::Getting current branch name");
+  core.debug("::group::Getting current branch name");
 
   const eventName = ghEnv("GITHUB_EVENT_NAME");
-  core.info("Event name is: " + eventName);
+  core.debug("Event name is: " + eventName);
   if (eventName === "pull_request") {
-    core.info("Event is pull request, returning GITHUB_HEAD_REF");
+    core.debug("Event is pull request, returning GITHUB_HEAD_REF");
     const headRef = ghEnv("GITHUB_HEAD_REF");
     if (!headRef) {
       throw new Error("Could not get branch name from GITHUB_HEAD_REF");
@@ -75,44 +75,68 @@ function getCurrentBranchName(): string {
     return headRef;
   }
 
-  core.info("Event is not pull request, returning GITHUB_REF");
+  core.debug("Event is not pull request, returning GITHUB_REF");
   const ref = ghEnv("GITHUB_REF")?.replace("refs/heads/", "");
   if (!ref) {
     throw new Error("Could not get branch name from GITHUB_REF");
   }
 
-  core.info("Current branch name: " + ref);
+  core.debug("Current branch name: " + ref);
 
-  core.info("::endgroup::");
+  core.debug("::endgroup::");
   return ref;
 }
 
+async function listWorkflows(
+  octokit: Octokit,
+  args: (Omit<
+    Parameters<Octokit["rest"]["actions"]["listWorkflowRuns"]>[0],
+    "workflow_id"
+  > & {
+    workflow_id?: string | number;
+  }) &
+    Parameters<Octokit["rest"]["actions"]["listWorkflowRunsForRepo"]>[0]
+) {
+  const workflowId = args?.workflow_id;
+  if (workflowId) {
+    return await octokit.rest.actions.listWorkflowRuns({
+      ...args,
+      workflow_id: workflowId,
+    });
+  }
+
+  return await octokit.rest.actions.listWorkflowRunsForRepo(args);
+}
+
 async function handleWorkflowRunSha({
+  workflowId,
   octokit,
   owner,
   repo,
   currentBranchName,
 }: {
+  workflowId: string;
   octokit: Octokit;
   owner: string;
   repo: string;
   currentBranchName: string;
 }): Promise<string> {
-  const result = await octokit.rest.actions
-    .listWorkflowRunsForRepo({
-      owner,
-      repo,
-      status: "success",
-      branch: currentBranchName,
-      page: 1,
-      per_page: 100,
-    })
-    .catch((e) => {
-      throw new Error(`Error getting workflow runs: ${e}`);
-    });
+  const {
+    data: { workflow_runs },
+  } = await listWorkflows(octokit, {
+    workflow_id: workflowId,
+    owner,
+    repo,
+    status: "success",
+    branch: currentBranchName,
+    page: 1,
+    per_page: 100,
+  }).catch((e) => {
+    throw new Error(`Error getting workflow runs: ${e}`);
+  });
 
   const filteredWorkflowRuns = await filterWorkflowRuns({
-    runs: result.data.workflow_runs,
+    runs: workflow_runs,
     oktokit: octokit,
     owner,
     repo,
@@ -130,30 +154,33 @@ async function handleWorkflowRunSha({
 }
 
 async function handleJobSha({
+  workflowId,
   octokit,
   owner,
   repo,
   currentBranchName,
   jobName,
 }: {
+  workflowId: string;
   octokit: Octokit;
   owner: string;
   repo: string;
   currentBranchName: string;
   jobName: string;
 }): Promise<string> {
-  const previousCompletedWorkflowRuns = await octokit.rest.actions
-    .listWorkflowRunsForRepo({
-      owner,
-      repo,
-      branch: currentBranchName,
-    })
-    .catch((e) => {
-      throw new Error(`Error getting workflow runs: ${e}`);
-    });
+  const {
+    data: { workflow_runs: workflowRuns },
+  } = await listWorkflows(octokit, {
+    workflow_id: workflowId,
+    owner,
+    repo,
+    branch: currentBranchName,
+  }).catch((e) => {
+    throw new Error(`Error getting workflow runs: ${e}`);
+  });
 
   const filteredWorkflowRuns = await filterWorkflowRuns({
-    runs: previousCompletedWorkflowRuns.data.workflow_runs,
+    runs: workflowRuns,
     oktokit: octokit,
     owner,
     repo,
@@ -177,9 +204,9 @@ async function handleJobSha({
       "::group::Checking all jobs in commit of hash: " + thisRunCommitHash
     );
     for (const job of workflowRunJobs.data.jobs) {
-      core.info("Job name: " + job.name);
-      core.info("Job status: " + job.status);
-      core.info("Job conclusion: " + job.conclusion);
+      core.debug("Job name: " + job.name);
+      core.debug("Job status: " + job.status);
+      core.debug("Job conclusion: " + job.conclusion);
 
       if (
         job.name === jobName &&
@@ -225,10 +252,11 @@ async function getSha(): Promise<string> {
 
   const currentBranchName = getCurrentBranchName();
 
-  core.info("Current branch name: " + currentBranchName);
+  core.debug("Current branch name: " + currentBranchName);
 
   if (useLatestSuccessfulWorkflowRun) {
     return handleWorkflowRunSha({
+      workflowId,
       octokit,
       owner,
       repo,
@@ -237,6 +265,7 @@ async function getSha(): Promise<string> {
   }
 
   return handleJobSha({
+    workflowId,
     octokit,
     owner,
     repo,
