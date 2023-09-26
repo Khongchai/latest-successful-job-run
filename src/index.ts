@@ -21,7 +21,7 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
 }): Promise<T[]> {
   core.info("::group::Filtering workflow runs");
 
-  core.debug(
+  core.info(
     "Received successful workflow runs: " +
       runs.map((run) => run.head_sha).join(", ")
   );
@@ -35,7 +35,7 @@ async function filterWorkflowRuns<T extends { head_sha: string }>({
   });
 
   const sha = last100CommitsOfThisBranch.data.map((commit) => commit.sha);
-  core.debug("Last 100 commits of the current branch: " + sha.join(", "));
+  core.info("Last 100 commits of the current branch: " + sha.join(", "));
   const shaSet = new Set(sha);
 
   const filtered = runs.filter((run) => shaSet.has(run.head_sha));
@@ -62,12 +62,12 @@ function ghEnv(
 }
 
 function getCurrentBranchName(): string {
-  core.debug("::group::Getting current branch name");
+  core.info("::group::Getting current branch name");
 
   const eventName = ghEnv("GITHUB_EVENT_NAME");
-  core.debug("Event name is: " + eventName);
+  core.info("Event name is: " + eventName);
   if (eventName === "pull_request") {
-    core.debug("Event is pull request, returning GITHUB_HEAD_REF");
+    core.info("Event is pull request, returning GITHUB_HEAD_REF");
     const headRef = ghEnv("GITHUB_HEAD_REF");
     if (!headRef) {
       throw new Error("Could not get branch name from GITHUB_HEAD_REF");
@@ -75,15 +75,15 @@ function getCurrentBranchName(): string {
     return headRef;
   }
 
-  core.debug("Event is not pull request, returning GITHUB_REF");
+  core.info("Event is not pull request, returning GITHUB_REF");
   const ref = ghEnv("GITHUB_REF")?.replace("refs/heads/", "");
   if (!ref) {
     throw new Error("Could not get branch name from GITHUB_REF");
   }
 
-  core.debug("Current branch name: " + ref);
+  core.info("Current branch name: " + ref);
 
-  core.debug("::endgroup::");
+  core.info("::endgroup::");
   return ref;
 }
 
@@ -204,9 +204,9 @@ async function handleJobSha({
       "::group::Checking all jobs in commit of hash: " + thisRunCommitHash
     );
     for (const job of workflowRunJobs.data.jobs) {
-      core.debug("Job name: " + job.name);
-      core.debug("Job status: " + job.status);
-      core.debug("Job conclusion: " + job.conclusion);
+      core.info("Job name: " + job.name);
+      core.info("Job status: " + job.status);
+      core.info("Job conclusion: " + job.conclusion);
 
       if (
         job.name === jobName &&
@@ -252,7 +252,7 @@ async function getSha(): Promise<string> {
 
   const currentBranchName = getCurrentBranchName();
 
-  core.debug("Current branch name: " + currentBranchName);
+  core.info("Current branch name: " + currentBranchName);
 
   if (useLatestSuccessfulWorkflowRun) {
     return handleWorkflowRunSha({

@@ -9677,7 +9677,7 @@ const github = __importStar(__nccwpck_require__(9714));
 function filterWorkflowRuns({ runs, oktokit, owner, repo, currentBranchName, }) {
     return __awaiter(this, void 0, void 0, function* () {
         core.info("::group::Filtering workflow runs");
-        core.debug("Received successful workflow runs: " +
+        core.info("Received successful workflow runs: " +
             runs.map((run) => run.head_sha).join(", "));
         const last100CommitsOfThisBranch = yield oktokit.rest.repos.listCommits({
             owner,
@@ -9687,7 +9687,7 @@ function filterWorkflowRuns({ runs, oktokit, owner, repo, currentBranchName, }) 
             page: 1,
         });
         const sha = last100CommitsOfThisBranch.data.map((commit) => commit.sha);
-        core.debug("Last 100 commits of the current branch: " + sha.join(", "));
+        core.info("Last 100 commits of the current branch: " + sha.join(", "));
         const shaSet = new Set(sha);
         const filtered = runs.filter((run) => shaSet.has(run.head_sha));
         // if the current branch has no commits, return an empty string
@@ -9703,24 +9703,24 @@ function ghEnv(key) {
 }
 function getCurrentBranchName() {
     var _a;
-    core.debug("::group::Getting current branch name");
+    core.info("::group::Getting current branch name");
     const eventName = ghEnv("GITHUB_EVENT_NAME");
-    core.debug("Event name is: " + eventName);
+    core.info("Event name is: " + eventName);
     if (eventName === "pull_request") {
-        core.debug("Event is pull request, returning GITHUB_HEAD_REF");
+        core.info("Event is pull request, returning GITHUB_HEAD_REF");
         const headRef = ghEnv("GITHUB_HEAD_REF");
         if (!headRef) {
             throw new Error("Could not get branch name from GITHUB_HEAD_REF");
         }
         return headRef;
     }
-    core.debug("Event is not pull request, returning GITHUB_REF");
+    core.info("Event is not pull request, returning GITHUB_REF");
     const ref = (_a = ghEnv("GITHUB_REF")) === null || _a === void 0 ? void 0 : _a.replace("refs/heads/", "");
     if (!ref) {
         throw new Error("Could not get branch name from GITHUB_REF");
     }
-    core.debug("Current branch name: " + ref);
-    core.debug("::endgroup::");
+    core.info("Current branch name: " + ref);
+    core.info("::endgroup::");
     return ref;
 }
 function listWorkflows(octokit, args) {
@@ -9793,9 +9793,9 @@ function handleJobSha({ workflowId, octokit, owner, repo, currentBranchName, job
             const thisRunCommitHash = workflowRun.head_sha;
             core.info("::group::Checking all jobs in commit of hash: " + thisRunCommitHash);
             for (const job of workflowRunJobs.data.jobs) {
-                core.debug("Job name: " + job.name);
-                core.debug("Job status: " + job.status);
-                core.debug("Job conclusion: " + job.conclusion);
+                core.info("Job name: " + job.name);
+                core.info("Job status: " + job.status);
+                core.info("Job conclusion: " + job.conclusion);
                 if (job.name === jobName &&
                     job.status === "completed" &&
                     job.conclusion === "success") {
@@ -9831,7 +9831,7 @@ function getSha() {
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
         const currentBranchName = getCurrentBranchName();
-        core.debug("Current branch name: " + currentBranchName);
+        core.info("Current branch name: " + currentBranchName);
         if (useLatestSuccessfulWorkflowRun) {
             return handleWorkflowRunSha({
                 workflowId,
